@@ -19,11 +19,22 @@ export class MateriaService {
     return this.http.post<IMateria>(this.baseUrl, materia);
   }
 
+  cargarMateriasQueNoTengaElProfesor(profesorId: number): Observable<IMateria[]> {
+    return this.http.get<IMateria[]>(`${this.baseUrl}?excluir_profesor=${profesorId}`);
+  }
+
   actualizarMateria(id: number, materia: IMateria): Observable<IMateria> {
     return this.http.put<IMateria>(`${this.baseUrl}${id}/`, materia);
   }
 
   eliminarMateria(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}${id}/`);
+  }
+
+  asignarProfesorAMaterias(profesorId: number, materiaIds: number[]): Observable<any> {
+    return this.http.post(`${this.baseUrl}asignar-profesor/`, {
+      profesor_id: profesorId,
+      materia_ids: materiaIds
+    });
   }
 }
