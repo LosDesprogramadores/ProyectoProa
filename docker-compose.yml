@@ -1,6 +1,3 @@
-# docker-compose.yml
-version: '3.8'
-
 services:
   backend:
     build:
@@ -16,7 +13,11 @@ services:
       - ./backend/.env
     environment:
       - DEBUG=1
-    
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend/requirements.txt
+
   frontend:
     build:
       context: ./frontend
@@ -27,3 +28,10 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    develop:
+      watch:
+
+        - action: rebuild
+          path: ./frontend/src
+        - action: rebuild
+          path: ./frontend/package.json
