@@ -13,3 +13,9 @@ export interface IMateria {
   curso: string;
   profesor_id?: number | null;
 }
+
+export interface IMateriaAsignacion {
+  profesor_id: number;
+  materia_ids: number[];
+}
+
