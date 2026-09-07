@@ -7,96 +7,54 @@ from .serializer import MateriaSerializer, InscripcionSerializer, PersonaResumen
 from usuario.models import Persona
 
 
-class MateriaViewSet(viewsets.ModelViewSet):
 
-    queryset = Materia.objects.select_related('profesor__rol').all()
+class MateriaViewSet(viewsets.ModelViewSet):
+    queryset = Materia.objects.select_related('profesor').all()
     serializer_class = MateriaSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['titulo', 'curso', 'profesor__nombre', 'profesor__apellido']
-    ordering_fields = ['anio', 'curso', 'titulo', 'fecha_creacion']
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['titulo', 'anio', 'curso']
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        anio = self.request.query_params.get('anio')
-        curso = self.request.query_params.get('curso')
-        profesor_id = self.request.query_params.get('profesor')
+    @action(detail=False, methods=['post'], url_path='asignar-profesor')
+    def asignar_profesor(self, request):
+        profesor_id = request.data.get('profesor_id') or request.data.get('profesor')
+        materia_ids = request.data.get('materia_ids') or request.data.get('materias', [])
 
-        if anio:
-            queryset = queryset.filter(anio=anio)
-        if curso:
-            queryset = queryset.filter(curso__icontains=curso)
-        if profesor_id:
-            queryset = queryset.filter(profesor_id=profesor_id)
-
-        return queryset
-
-    #Impedir eliminación de materias si la materia tiene un profesor asignado y/o al menos un estudiante.
-    def destroy(self, request, *args, **kwargs):
-
-        materia = self.get_object()
-        motivos = []
-
-        if materia.profesor is not None:
-            motivos.append("Tiene un profesor asignado")
-
-        total_inscriptos = materia.inscripciones.count()
-        if total_inscriptos > 0:
-            motivos.append(f"Tiene {total_inscriptos} estudiante(s) inscripto(s).")
-
-        if motivos:
+        if not profesor_id:
             return Response(
-                {
-                    "error": "No se puede eliminar la materia.",
-                    "motivos": motivos,
-                    "sugerencia": "Si elimina la materia, se eliminará toda información relacionada a la misma (Notas, Estudiantes)."
-                },
+                {'error': 'El campo profesor_id es obligatorio.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        return super().destroy(request, *args, **kwargs)
+        if not isinstance(materia_ids, list) or len(materia_ids) == 0:
+            return Response(
+                {'error': 'Debes enviar un array materia_ids con al menos un ID.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+        Materia.objects.filter(profesor_id=profesor_id).exclude(id__in=materia_ids).update(profesor=None)
+        actualizadas = Materia.objects.filter(id__in=materia_ids).update(profesor_id=profesor_id)
 
-    @action(detail=True, methods=['get'], url_path='estudiantes-disponibles')
-    def estudiantes_disponibles(self, request, pk=None):
+        return Response({
+            'mensaje': f'Se asignó el profesor a {actualizadas} materias correctamente.',
+            'profesor_id': profesor_id,
+            'materia_ids': materia_ids
+        }, status=status.HTTP_200_OK)
 
-        materia = self.get_object()
-        inscriptos_ids = materia.inscripciones.values_list('estudiante_id', flat=True)
+    def get_queryset(self):
 
-        disponibles = Persona.objects.filter(
-            fecha_baja__isnull=True,
-            rol__nombre__iexact='Estudiante'
-        ).exclude(id__in=inscriptos_ids).order_by('apellido', 'nombre')
+        queryset = super().get_queryset()      
+        profesor_id = self.request.query_params.get('profesor')
+        excluir_profesor = self.request.query_params.get('excluir_profesor')
 
-        serializer = PersonaResumenSerializer(disponibles, many=True)
-        return Response(serializer.data)
+        if profesor_id:
+            return queryset.filter(profesor_id=profesor_id)
 
-    @action(detail=False, methods=['get'], url_path='mis-materias')
-    def mis_materias(self, request):
-        user = request.user
-        persona = getattr(user, 'persona', None)
+        if excluir_profesor:
+            return queryset.exclude(profesor_id=excluir_profesor)
 
-        # Administrador (rol 1) o super user ve todas las materias
-        if user.is_superuser or user.is_staff or (persona and persona.rol_id == 1):
-            materias = Materia.objects.all()
+        return queryset
 
-        # Profesor o Estudiante según rol
-        elif persona and persona.rol:
-            rol_nombre = persona.rol.nombre.strip().capitalize()
-            if rol_nombre == 'Estudiante':
-                materias = Materia.objects.filter(
-                    inscripciones__estudiante=persona
-                ).distinct()
-            elif rol_nombre == 'Profesor':
-                materias = Materia.objects.filter(profesor=persona)
-            else:
-                return Response([])
-        else:
-            return Response([])
-
-        materias = materias.select_related('profesor__rol').order_by('anio', 'curso', 'titulo')
-        serializer = self.get_serializer(materias, many=True)
-        return Response(serializer.data)
 
 class InscripcionViewSet(viewsets.ModelViewSet):
 
