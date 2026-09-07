@@ -11,4 +11,5 @@ export interface IMateria {
   criterios_evaluacion?: string | null;
   anio: number;
   curso: string;
+  profesor_id?: number | null;
 }

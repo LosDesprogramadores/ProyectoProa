@@ -19,6 +19,7 @@ profesores = signal<Persona[]>([])
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   selectedId = signal<number | null>(null);
+  isLoading = signal<boolean>(false);
 
   form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required]],
@@ -35,11 +36,14 @@ profesores = signal<Persona[]>([])
   }
 
   cargarProfesores():void{
+      this.isLoading.set(true);
     this.profesorService.obtenerProfesores().subscribe({
       next : (data) => {this.profesores.set(data);
+          this.isLoading.set(false);
             console.log(data)},
-      error: (err) => console.error('Error al cargar profesores:', err )
-
+      error: (err) => {console.error('Error al cargar profesores:', err )
+        this.isLoading.set(false);
+      }
       })
   }
 
@@ -107,7 +111,7 @@ profesores = signal<Persona[]>([])
    
   }
 
- }
+}
 
 
 
