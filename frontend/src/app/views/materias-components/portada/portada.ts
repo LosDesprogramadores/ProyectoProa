@@ -14,142 +14,76 @@ import { ContenidoUnidadComponent } from './contenido-unidad/contenido-unidad';
 
 @Component({
   selector: 'app-portada',
-
   standalone: true,
-
   imports: [
     CommonModule,
     RouterModule,
     FormsModule,
     ContenidoUnidadComponent
   ],
-
   templateUrl: './portada.html',
-
   styleUrl: './portada.css',
 })
 export class Portada {
 
   @Input() materia?: MateriaPortada;
 
-
   // ==========================================
   // DATOS DEMO
   // ==========================================
 
   materiaDemo: MateriaPortada = {
-
     nombre: 'Matemática I',
-
     docente: 'Prof. Carlos Scarpatti',
-
-    presentacion:
-      'Esta materia introduce los conceptos básicos de álgebra y geometría, con aplicaciones prácticas en la vida cotidiana y profesional.',
-
+    presentacion: 'Esta materia introduce los conceptos básicos de álgebra y geometría, con aplicaciones prácticas en la vida cotidiana y profesional.',
     unidades: [
-
       {
         id: 'unidad-1',
-
         numero: 1,
-
         nombre: 'Números reales y operaciones',
-
-        descripcion:
-          'Fundamentos de números reales y operaciones básicas',
-
+        descripcion: 'Fundamentos de números reales y operaciones básicas',
         contenidos: [
-
           {
             id: 'contenido-1',
-
             titulo: 'Guía de Números Reales',
-
-            descripcion:
-              'Documento completo sobre números reales',
-
+            descripcion: 'Documento completo sobre números reales',
             tipo: 'documento',
-
-            url:
-              'https://drive.google.com/file/d/EJEMPLO/view',
-
-            fechaCreacion:
-              new Date('2026-09-01'),
-
-            visible: true,
+            url: 'https://drive.google.com/file/d/EJEMPLO/view',
+            fechaCreacion: new Date('2026-09-01'),
           },
-
           {
             id: 'contenido-2',
-
             titulo: 'Tutorial en Video',
-
-            descripcion:
-              'Explicación de operaciones',
-
+            descripcion: 'Explicación de operaciones',
             tipo: 'video',
-
-            url:
-              'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-
-            fechaCreacion:
-              new Date('2026-09-02'),
-
-            visible: true,
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            fechaCreacion: new Date('2026-09-02'),
           }
-
         ]
       },
-
-
       {
         id: 'unidad-2',
-
         numero: 2,
-
         nombre: 'Álgebra básica',
-
-        descripcion:
-          'Conceptos fundamentales de álgebra',
-
+        descripcion: 'Conceptos fundamentales de álgebra',
         contenidos: []
-
       },
-
-
       {
         id: 'unidad-3',
-
         numero: 3,
-
         nombre: 'Funciones y gráficas',
-
-        descripcion:
-          'Estudio de funciones y representación gráfica',
-
+        descripcion: 'Estudio de funciones y representación gráfica',
         contenidos: []
-
       },
-
-
       {
         id: 'unidad-4',
-
         numero: 4,
-
         nombre: 'Geometría analítica',
-
-        descripcion:
-          'Geometría en el plano cartesiano',
-
+        descripcion: 'Geometría en el plano cartesiano',
         contenidos: []
-
       }
-
     ]
-
   };
-
 
   // ==========================================
   // ROL
@@ -157,223 +91,165 @@ export class Portada {
 
   esDocente = signal<boolean>(true);
 
-
   // ==========================================
   // EDICIÓN DE PRESENTACIÓN
   // ==========================================
 
-  editandoDescripcion =
-    signal<boolean>(false);
-
+  editandoDescripcion = signal<boolean>(false);
   tempDescripcion = '';
-
 
   // ==========================================
   // UNIDAD ABIERTA
   // ==========================================
 
-  unidadExpandida =
-    signal<string | null>(null);
+  unidadExpandida = signal<string | null>(null);
 
+  // ==========================================
+  // NUEVA UNIDAD
+  // ==========================================
+
+  mostrarFormularioUnidad = signal<boolean>(false);
+  nuevoNombreUnidad = '';
+  nuevoDescripcionUnidad = '';
 
   // ==========================================
   // DATOS ACTUALES
   // ==========================================
 
   get datosActuales(): MateriaPortada {
-
     return this.materia || this.materiaDemo;
-
   }
 
-
   // ==========================================
-  // PRESENTACIÓN
+  // GESTIÓN PRESENTACIÓN
   // ==========================================
 
   iniciarEdicionDescripcion() {
-
-    this.tempDescripcion =
-      this.datosActuales.presentacion;
-
+    this.tempDescripcion = this.datosActuales.presentacion;
     this.editandoDescripcion.set(true);
-
   }
-
 
   guardarDescripcion() {
-
-    this.datosActuales.presentacion =
-      this.tempDescripcion;
-
+    this.datosActuales.presentacion = this.tempDescripcion;
     this.editandoDescripcion.set(false);
-
     console.log('Descripción guardada');
-
   }
-
 
   cancelarEdicionDescripcion() {
-
     this.editandoDescripcion.set(false);
-
   }
 
-
   // ==========================================
-  // UNIDADES
+  // GESTIÓN UNIDADES
   // ==========================================
 
   toggleUnidad(unidadId: string) {
-
     if (this.unidadExpandida() === unidadId) {
-
       this.unidadExpandida.set(null);
-
     } else {
-
       this.unidadExpandida.set(unidadId);
+    }
+  }
 
+  trackByUnidad(index: number, unidad: UnidadMateria): string {
+    return unidad.id;
+  }
+
+  abrirFormularioUnidad() {
+    this.mostrarFormularioUnidad.set(true);
+    this.nuevoNombreUnidad = '';
+    this.nuevoDescripcionUnidad = '';
+  }
+
+  cancelarFormularioUnidad() {
+    this.mostrarFormularioUnidad.set(false);
+  }
+
+  guardarUnidad() {
+    if (!this.nuevoNombreUnidad.trim()) {
+      alert('El nombre de la unidad es requerido');
+      return;
     }
 
+    const unidades = this.datosActuales.unidades;
+    const numeroNuevo = (unidades.length || 0) + 1;
+
+    const nuevaUnidad: UnidadMateria = {
+      id: `unidad-${Date.now()}`,
+      numero: numeroNuevo,
+      nombre: this.nuevoNombreUnidad,
+      descripcion: this.nuevoDescripcionUnidad || undefined,
+      contenidos: []
+    };
+
+    unidades.push(nuevaUnidad);
+    console.log('Unidad creada:', nuevaUnidad);
+
+    this.mostrarFormularioUnidad.set(false);
+    // TODO: Guardar en backend
+    // this.materiaService.crearUnidad(this.materia.id, nuevaUnidad).subscribe(...)
   }
-
-
-  trackByUnidad(
-    index: number,
-    unidad: UnidadMateria
-  ): string {
-
-    return unidad.id;
-
-  }
-
 
   // ==========================================
-  // CONTENIDOS
+  // GESTIÓN CONTENIDO
   // ==========================================
 
   onContenidoGuardado(
     unidadId: string,
     contenido: ContenidoUnidad
   ) {
-
-    const unidad =
-      this.datosActuales.unidades.find(
-        u => u.id === unidadId
-      );
-
+    const unidad = this.datosActuales.unidades.find(u => u.id === unidadId);
     if (!unidad) {
-
       return;
-
     }
 
-
-    const indiceExistente =
-      unidad.contenidos.findIndex(
-        c => c.id === contenido.id
-      );
-
+    const indiceExistente = unidad.contenidos.findIndex(c => c.id === contenido.id);
 
     // Actualizar
     if (indiceExistente >= 0) {
-
-      const fechaOriginal =
-        unidad.contenidos[indiceExistente]
-          .fechaCreacion;
-
+      const fechaOriginal = unidad.contenidos[indiceExistente].fechaCreacion;
       unidad.contenidos[indiceExistente] = {
-
         ...contenido,
-
         fechaCreacion: fechaOriginal
-
       };
-
-      console.log(
-        'Contenido actualizado:',
-        contenido
-      );
-
+      console.log('Contenido actualizado:', contenido);
     }
-
     // Nuevo
     else {
-
       unidad.contenidos.push({
         ...contenido
       });
-
-      console.log(
-        'Contenido agregado:',
-        contenido
-      );
-
+      console.log('Contenido agregado:', contenido);
     }
-
   }
-
 
   onContenidoEliminado(
     unidadId: string,
     contenidoId: string
   ) {
-
-    const unidad =
-      this.datosActuales.unidades.find(
-        u => u.id === unidadId
-      );
-
+    const unidad = this.datosActuales.unidades.find(u => u.id === unidadId);
     if (!unidad) {
-
       return;
-
     }
 
-
-    const indice =
-      unidad.contenidos.findIndex(
-        c => c.id === contenidoId
-      );
-
+    const indice = unidad.contenidos.findIndex(c => c.id === contenidoId);
 
     if (indice >= 0) {
-
-      unidad.contenidos.splice(
-        indice,
-        1
-      );
-
-      console.log(
-        'Contenido eliminado:',
-        contenidoId
-      );
-
+      unidad.contenidos.splice(indice, 1);
+      console.log('Contenido eliminado:', contenidoId);
     }
-
   }
 
-
   // ==========================================
-  // MÉTODOS LEGACY
+  // MÉTODOS LEGACY (pueden usar después)
   // ==========================================
 
   abrirModalActividad() {
-
-    console.log(
-      'Abrir modal para crear actividad'
-    );
-
+    console.log('Abrir modal para crear actividad');
   }
 
-
   abrirModalRecurso() {
-
-    console.log(
-      'Abrir modal para subir recurso'
-    );
-
+    console.log('Abrir modal para subir recurso');
   }
 
 }

@@ -1,7 +1,3 @@
-/**
- * Modelo para Contenido de una Unidad
- * Representa un recurso (documento, video, enlace) que el profesor carga
- */
 export interface ContenidoUnidad {
   id: string;
   titulo: string;
@@ -10,13 +6,9 @@ export interface ContenidoUnidad {
   url: string;
   fechaCreacion: Date;
   profesor_id?: string;
-  visible: boolean;
+  visible?: boolean; // Agregamos como opcional
 }
 
-/**
- * Modelo para una Unidad de una Materia
- * Agrupa un conjunto de contenidos relacionados
- */
 export interface UnidadMateria {
   id: string;
   numero: number;
@@ -25,10 +17,6 @@ export interface UnidadMateria {
   contenidos: ContenidoUnidad[];
 }
 
-/**
- * Modelo para la Portada de una Materia
- * Contiene presentación y todas las unidades
- */
 export interface MateriaPortada {
   nombre: string;
   docente: string;
