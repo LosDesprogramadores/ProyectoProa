@@ -1,6 +1,10 @@
+from django.db import transaction
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from .models import Materia, Inscripcion
 from .serializer import MateriaSerializer, InscripcionSerializer, PersonaResumenSerializer
@@ -8,6 +12,27 @@ from usuario.models import Persona
 
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Listar materias (con filtros opcionales de profesor)",
+        parameters=[
+            OpenApiParameter(
+                name='profesor',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='ID del profesor: trae únicamente las materias que tiene asignadas.',
+                required=False
+            ),
+            OpenApiParameter(
+                name='excluir_profesor',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='ID del profesor: trae las materias que NO pertenecen a este profesor (disponibles o de otros).',
+                required=False
+            ),
+        ]
+    )
+)
 class MateriaViewSet(viewsets.ModelViewSet):
     queryset = Materia.objects.select_related('profesor').all()
     serializer_class = MateriaSerializer
