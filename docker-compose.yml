@@ -13,8 +13,16 @@ services:
       - ./backend/.env
     environment:
       - DEBUG=1
+    command: python manage.py runserver 0.0.0.0:8000 
     develop:
       watch:
+        - action: sync
+          path: ./backend
+          target: /app
+          ignore:
+            - "**/__pycache__/**"
+            - "**/*.pyc"
+            
         - action: rebuild
           path: ./backend/requirements.txt
 
@@ -30,8 +38,9 @@ services:
     restart: unless-stopped
     develop:
       watch:
-
+        
         - action: rebuild
           path: ./frontend/src
+        
         - action: rebuild
           path: ./frontend/package.json
