@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'usuario',
     'foro',
     'notificacion',
+    'aula_virtual',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist', 
@@ -133,6 +134,8 @@ DATABASES = {
 MONGO_URI = "mongodb://localhost:27017/"
 MONGO_DB_NAME = "proa_conecta"
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
