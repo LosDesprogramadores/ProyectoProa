@@ -76,7 +76,7 @@ class MateriaViewSet(viewsets.ModelViewSet):
             return queryset.filter(profesor_id=profesor_id)
 
         if excluir_profesor:
-            return queryset.exclude(profesor_id=excluir_profesor)
+           return queryset.filter(profesor__isnull=True)
 
         return queryset
 
