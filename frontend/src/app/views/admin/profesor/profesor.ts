@@ -6,11 +6,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProfesorService } from '../../../services/profesor.service';
 import { IMateria, IMateriaAsignacion } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
+import { TablaGenerica } from '../tabla-generica/tabla-generica';
 
 
 @Component({
   selector: 'app-profesor',
-  imports: [ReactiveFormsModule,RouterModule, CommonModule],
+  imports: [ReactiveFormsModule,RouterModule, CommonModule, TablaGenerica],
   templateUrl: './profesor.html',
   styleUrl: './profesor.css',
 })
@@ -18,16 +19,30 @@ export class Profesor implements OnInit {
 private fb = inject(FormBuilder);
 private materiaService = inject(MateriaService);
 private profesorService = inject(ProfesorService)
+
 profesores = signal<Persona[]>([])
-  isModalOpen = signal<boolean>(false);
-  isEditing = signal<boolean>(false);
-  selectedId = signal<number | null>(null);
-  isLoading = signal<boolean>(false);
-  docenteParaAsignar = signal<Persona | null>(null);
+isModalOpen = signal<boolean>(false);
+isEditing = signal<boolean>(false);
+selectedId = signal<number | null>(null);
+isLoading = signal<boolean>(false);
+
+profesorSeleccionado= signal<Persona | null>(null);
+materiasProfesorSeleccionado = signal<IMateria[]>([]);
+profesorConsultado = signal<Persona | null>(null);
+
+profesorParaAsignar= signal<Persona | null>(null);
 materiasDisponibles = signal<IMateria[]>([]);
+isModalAsignarOpen = signal<boolean>(false);
+
 selectedMateriaIds = signal<number[]>([]);
+isLoadingConsulta = signal<boolean>(false);
 isLoadingMaterias = signal<boolean>(false);
 
+columnasMaterias = [
+    { titulo: 'Materia', campo: 'titulo' },
+    { titulo: 'Año / Nivel', campo: 'curso' },
+    { titulo: 'Total de Estudiantes', campo: 'total_estudiantes' }
+  ];
 
   form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required]],
@@ -112,13 +127,16 @@ isLoadingMaterias = signal<boolean>(false);
   //   }
   }
 
-  asignar(docente: Persona): void {
-    console.log('Asignando materias al docente:', docente);
-    this.docenteParaAsignar.set(docente);
+  asignar(profesor: Persona): void {
+    this.profesorSeleccionado.set(null);
+    this.materiasProfesorSeleccionado.set([]);
+    console.log('Asignando materias al profesor:', profesor);
+    this.profesorParaAsignar.set(profesor);
     this.selectedMateriaIds.set([]);
     this.isLoadingMaterias.set(true);
+    this.isModalAsignarOpen.set(true);
 
-    this.materiaService.cargarMateriasQueNoTengaElProfesor(this.docenteParaAsignar()!.id).subscribe({
+    this.materiaService.cargarMateriasQueNoTengaElProfesor(this.profesorParaAsignar()!.id).subscribe({
       next: (materias) => {
         this.materiasDisponibles.set(materias);
         this.isLoadingMaterias.set(false);
@@ -130,16 +148,45 @@ isLoadingMaterias = signal<boolean>(false);
     });
   }
 
-   consultar(profesor: Persona): void {
-   
+
+consultar(profesor: Persona): void {
+  console.log('1. Click en Consultar. Objeto recibido:', profesor);
+
+  // Solo evalúa cerrar si YA hay un profesor cargado en la señal
+  const actual = this.profesorSeleccionado();
+  if (actual && actual.id === profesor.id) {
+    
+    return;
   }
 
+  // Setea el profesor para que el @if del HTML se active DE INMEDIATO
+  this.profesorSeleccionado.set(profesor);
+  console.log('3. Señal profesorSeleccionado actualizada a:', this.profesorSeleccionado());
+
+  // Limpia materias previas e inicia la llamada HTTP
+  this.materiasProfesorSeleccionado.set([]);
+
+  this.materiaService.obtenerMateriasPorProfesor(profesor.id).subscribe({
+    next: (materias) => {
+      console.log('4. Materias recibidas con éxito:', materias);
+      this.materiasProfesorSeleccionado.set(materias);
+    },
+    error: (err) => {
+      console.error('Error HTTP al consultar materias:', err);
+    }
+  });
+}
+
+cerrarConsulta(): void {
+  this.profesorSeleccionado.set(null);
+  this.materiasProfesorSeleccionado.set([]);
+}
   guardarAsignacion(): void {
-  const docente = this.docenteParaAsignar();
+  const profesor = this.profesorParaAsignar();
   const ids = this.selectedMateriaIds();
 
-  if (!docente || ids.length === 0) return;
-this.materiaService.asignarProfesorAMaterias(docente.id, ids).subscribe({
+  if (!profesor  || ids.length === 0) return;
+this.materiaService.asignarProfesorAMaterias(profesor.id, ids).subscribe({
     next: (res) => {
       console.log('Asignación completada:', res);
       this.cerrarModalAsignar();
@@ -152,7 +199,8 @@ this.materiaService.asignarProfesorAMaterias(docente.id, ids).subscribe({
 }
 
 cerrarModalAsignar(): void {
-  this.docenteParaAsignar.set(null);
+  this.isModalAsignarOpen.set(false);
+  this.profesorParaAsignar.set(null);
   this.selectedMateriaIds.set([]);
 }
 
@@ -179,6 +227,11 @@ seleccionarTodasMaterias(): void {
   } else {
     this.selectedMateriaIds.set(idsValidos);
   }
+}
+
+setearProfesorSeleccionado(profesor: Persona) : void {
+     this.profesorSeleccionado.set(profesor);
+     this.materiasProfesorSeleccionado.set([]);
 }
 
 }

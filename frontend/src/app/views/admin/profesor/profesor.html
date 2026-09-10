@@ -1,6 +1,6 @@
-<div class="p-8 max-w-7xl mx-auto space-y-6">
+<div class="w-11/12 max-w-5xl mx-auto py-8 space-y-8">
 
-  <!-- Cabecera de Sección -->
+  <!-- 1. Cabecera de Sección -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Administración de Profesores</h1>
@@ -8,6 +8,7 @@
     </div>
     
     <button 
+      type="button"
       (click)="openCreateModal()" 
       class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#155dfc] hover:bg-[#114cc9] text-white text-sm font-semibold rounded-xl shadow-sm shadow-blue-500/20 transition-all duration-200 cursor-pointer">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -17,7 +18,7 @@
     </button>
   </div>
 
-  <!-- Tabla Principal de Profesores -->
+  <!-- 2. Tabla Principal de Profesores -->
   <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
@@ -58,7 +59,7 @@
                 <td class="py-4 px-6 text-slate-600">{{ item.email }}</td>
                 <td class="py-4 px-6 text-slate-500">{{ item.tel_contacto || '-' }}</td>
                 <td class="py-4 px-6">
-                  <div class="flex items-center justify-center gap-2">
+                  <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
                     <button 
                       type="button"
                       (click)="consultar(item)" 
@@ -106,7 +107,37 @@
     </div>
   </div>
 
-  <!-- Modal: Crear / Editar Profesor -->
+ @if (profesorSeleccionado(); as prof) {
+  <div class="bg-white rounded-2xl border-2 border-cyan-500/30 shadow-sm p-6 space-y-4">
+    
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div class="flex items-center gap-2.5">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800">Materias Asignadas</h3>
+          <p class="text-xs text-slate-500">
+            Cátedras de: <strong class="text-slate-700 font-semibold">{{ prof.apellido }}, {{ prof.nombre }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <button 
+        type="button"
+        (click)="profesorSeleccionado.set(null); materiasProfesorSeleccionado.set([])" 
+        class="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">
+        ✕ Cerrar detalle
+      </button>
+    </div>
+
+    <app-tabla-generica 
+      [columnas]="columnasMaterias"
+      [datos]="materiasProfesorSeleccionado()"
+      [isLoading]="isLoadingConsulta()"
+      mensajeVacio="No se encontraron materias asignadas para este docente." />
+
+  </div>
+}
+
+  <!-- 4. Modal: Crear / Editar Profesor -->
   @if (isModalOpen()) {
     <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div class="bg-white border border-slate-200 w-full max-w-lg rounded-2xl p-6 shadow-xl space-y-6">
@@ -163,12 +194,10 @@
     </div>
   }
 
-  <!-- Modal: Asignar Materias en Formato Tabla -->
-  @if (docenteParaAsignar(); as docente) {
+  @if (isModalAsignarOpen() && profesorParaAsignar(); as profesor) {
     <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
       <div class="bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         
-        <!-- Cabecera del Modal -->
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
           <div>
             <div class="flex items-center gap-2">
@@ -178,8 +207,8 @@
               </span>
             </div>
             <p class="text-xs text-slate-500 mt-0.5">
-              Titular: <strong class="text-slate-800 font-semibold">{{ docente.apellido }}, {{ docente.nombre }}</strong>
-              <span class="font-mono text-slate-400 ml-1.5">(DNI: {{ docente.dni }})</span>
+              Titular: <strong class="text-slate-800 font-semibold">{{ profesor.apellido }}, {{ profesor.nombre }}</strong>
+              <span class="font-mono text-slate-400 ml-1.5">(DNI: {{ profesor.dni }})</span>
             </p>
           </div>
           <button 
@@ -190,7 +219,6 @@
           </button>
         </div>
 
-        <!-- Tabla con Scroll y Cabecera Fija -->
         <div class="overflow-y-auto flex-1">
           <table class="w-full text-left border-collapse">
             <thead class="bg-slate-50 sticky top-0 z-10 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -262,7 +290,6 @@
           </table>
         </div>
 
-        <!-- Barra Inferior de Acciones -->
         <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <div class="text-xs text-slate-600 font-medium">
             Materias seleccionadas: 
