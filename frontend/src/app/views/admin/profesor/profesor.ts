@@ -152,18 +152,15 @@ columnasMaterias = [
 consultar(profesor: Persona): void {
   console.log('1. Click en Consultar. Objeto recibido:', profesor);
 
-  // Solo evalúa cerrar si YA hay un profesor cargado en la señal
   const actual = this.profesorSeleccionado();
   if (actual && actual.id === profesor.id) {
     
     return;
   }
 
-  // Setea el profesor para que el @if del HTML se active DE INMEDIATO
   this.profesorSeleccionado.set(profesor);
   console.log('3. Señal profesorSeleccionado actualizada a:', this.profesorSeleccionado());
 
-  // Limpia materias previas e inicia la llamada HTTP
   this.materiasProfesorSeleccionado.set([]);
 
   this.materiaService.obtenerMateriasPorProfesor(profesor.id).subscribe({
