@@ -20,6 +20,7 @@ import { Actividades } from './views/materias-components/actividades/actividades
 import { Calificaciones } from './views/materias-components/calificaciones/calificaciones';
 import { Profesor } from './views/admin/profesor/profesor';
 import { Materia } from './views/admin/materia/materia';
+import { TablaGenerica } from './views/admin/tabla-generica/tabla-generica';
 
 
 export const routes: Routes = [
@@ -44,6 +45,7 @@ export const routes: Routes = [
       { path: 'anuncios', component: Anuncios },
       { path: 'materias', component: Materias },
       { path: 'contacto', component: Contacto },
+      {path: 'tablaGenerica', component: TablaGenerica},
       { path: '', redirectTo: 'welcome', pathMatch: 'full' },
     ],
   },

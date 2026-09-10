@@ -37,4 +37,8 @@ export class MateriaService {
       materia_ids: materiaIds
     });
   }
+  obtenerMateriasPorProfesor(profesorId: number): Observable<IMateria[]> {
+    return this.http.get<IMateria[]>(`${this.baseUrl}?profesor=${profesorId}`);
+  }
+
 }
