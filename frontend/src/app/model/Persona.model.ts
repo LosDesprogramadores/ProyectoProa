@@ -24,3 +24,13 @@ export enum RolId {
   PROFESOR = 2,
   ESTUDIANTE = 3
 }
+
+export interface IPersonaResumen {
+  id: number;
+  dni: string;
+  nombre: string;
+  apellido: string;
+  nombre_completo: string;
+  email: string;
+  rol_nombre: string;
+}

@@ -46,18 +46,27 @@ class MateriaSerializer(serializers.ModelSerializer):
 class InscripcionSerializer(serializers.ModelSerializer):
     estudiante_detalle = PersonaResumenSerializer(source='estudiante', read_only=True)
     materia_titulo = serializers.CharField(source='materia.titulo', read_only=True)
-
+    materia_curso = serializers.CharField(source='materia.curso', read_only=True)
+    materia_anio = serializers.IntegerField(source='materia.anio', read_only=True)
+    profesor_nombre = serializers.SerializerMethodField()
     class Meta:
         model = Inscripcion
         fields = [
-            'id',
+          'id',
             'materia',
             'materia_titulo',
+            'materia_curso',       
+            'materia_anio',       
+            'profesor_nombre',
             'estudiante',
             'estudiante_detalle',
             'estado',
-            'fecha_inscripcion'
+            'fecha_inscripcion',
         ]
+    
+    def get_profesor_nombre(self, obj):
+        prof = obj.materia.profesor
+        return f"{prof.apellido}, {prof.nombre}" if prof else "Sin asignar"
 
     def validate_estudiante(self, value):
         rol = getattr(value.rol, 'nombre', '').strip().lower()

@@ -1,33 +1,36 @@
-from django.db import transaction
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-from drf_spectacular.types import OpenApiTypes
-
+from django.db import transaction
 from .models import Materia, Inscripcion
-from .serializer import MateriaSerializer, InscripcionSerializer, PersonaResumenSerializer
-from usuario.models import Persona
-
+from .serializer import MateriaSerializer, InscripcionSerializer
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 
 @extend_schema_view(
     list=extend_schema(
-        summary="Listar materias (con filtros opcionales de profesor)",
+        summary="Listar materias (con filtros de profesor y estudiante)",
         parameters=[
             OpenApiParameter(
                 name='profesor',
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
-                description='ID del profesor: trae únicamente las materias que tiene asignadas.',
+                description='ID del profesor: trae materias asignadas.',
                 required=False
             ),
             OpenApiParameter(
                 name='excluir_profesor',
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
-                description='ID del profesor: trae las materias que NO pertenecen a este profesor (disponibles o de otros).',
+                description='Trae materias sin profesor asignado.',
+                required=False
+            ),
+            OpenApiParameter(
+                name='disponibles_estudiante',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='ID del estudiante: trae materias en las que NO está inscripto.',
                 required=False
             ),
         ]
@@ -67,22 +70,24 @@ class MateriaViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     def get_queryset(self):
-
         queryset = super().get_queryset()      
         profesor_id = self.request.query_params.get('profesor')
         excluir_profesor = self.request.query_params.get('excluir_profesor')
+        disponibles_estudiante = self.request.query_params.get('disponibles_estudiante')
 
         if profesor_id:
-            return queryset.filter(profesor_id=profesor_id)
+            queryset = queryset.filter(profesor_id=profesor_id)
 
         if excluir_profesor:
-           return queryset.filter(profesor__isnull=True)
+            queryset = queryset.filter(profesor__isnull=True)
+
+        if disponibles_estudiante:
+            queryset = queryset.exclude(inscripciones__estudiante_id=disponibles_estudiante)
 
         return queryset
 
 
 class InscripcionViewSet(viewsets.ModelViewSet):
-
     queryset = Inscripcion.objects.select_related('materia', 'estudiante__rol').all()
     serializer_class = InscripcionSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -100,3 +105,37 @@ class InscripcionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(estudiante_id=estudiante_id)
 
         return queryset
+
+    @action(detail=False, methods=['post'], url_path='inscribir')
+    def inscribir_lote(self, request):
+        estudiante_id = request.data.get('estudiante_id')
+        materia_ids = request.data.get('materia_ids', [])
+
+        if not estudiante_id:
+            return Response(
+                {'error': 'El campo estudiante_id es obligatorio.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not isinstance(materia_ids, list) or len(materia_ids) == 0:
+            return Response(
+                {'error': 'Debes enviar un array materia_ids con al menos un ID.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        inscripciones_creadas = []
+        with transaction.atomic():
+            for m_id in materia_ids:
+                obj, created = Inscripcion.objects.get_or_create(
+                    estudiante_id=estudiante_id,
+                    materia_id=m_id,
+                    defaults={'estado': Inscripcion.EstadoInscripcion.CURSANDO}
+                )
+                if created:
+                    inscripciones_creadas.append(obj)
+
+        return Response({
+            'mensaje': f'Se inscribió al alumno en {len(inscripciones_creadas)} materias.',
+            'estudiante_id': estudiante_id,
+            'cantidad': len(inscripciones_creadas)
+        }, status=status.HTTP_201_CREATED)

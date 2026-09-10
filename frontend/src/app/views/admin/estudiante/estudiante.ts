@@ -4,6 +4,8 @@ import { FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import { RouterModule} from '@angular/router';
 import { IPersona, Persona, RolId } from '../../../model/Persona.model';
 import { EstudianteService } from '../../../services/estudiante.service';
+import { IMateria } from '../../../model/materia.model';
+import { MateriaService } from '../../../services/materia.service';
 
 
 @Component({
@@ -15,12 +17,20 @@ import { EstudianteService } from '../../../services/estudiante.service';
 export class Estudiante implements OnInit {
 private fb = inject(FormBuilder);
 private estudianteService = inject(EstudianteService)
+private materiaService = inject(MateriaService)
 students = signal<Persona[]>([])
 
   isModalOpen = signal<boolean>(false);
   isEditing = signal<boolean>(false);
   selectedId = signal<number | null>(null);
   isLoading = signal<boolean>(false);
+
+  isModalInscribirOpen = signal<boolean>(false);
+  estudianteParaInscribir = signal<Persona | null>(null);
+  materiasDisponibles = signal<IMateria[]>([]);
+  selectedMateriaIds = signal<number[]>([]);
+  isLoadingMaterias = signal<boolean>(false);
+
 
   form = this.fb.nonNullable.group({
     nombre: ['', [Validators.required]],
@@ -117,9 +127,75 @@ students = signal<Persona[]>([])
   }
   }
 
-  inscribir(students: Persona): void {
-   
+  inscribir(estudiante: Persona): void {
+    console.log('Iniciando proceso de inscripción para el estudiante:', estudiante);
+    this.estudianteParaInscribir.set(estudiante);
+  this.selectedMateriaIds.set([]);
+  this.isLoadingMaterias.set(true);
+  this.isModalInscribirOpen.set(true);
+
+    this.materiaService.cargarMateriasDisponiblesParaEstudiante(estudiante.id).subscribe({
+      next: (res: any) => {
+      const lista = Array.isArray(res) ? res : (res.results || []);
+      this.materiasDisponibles.set(lista);
+      this.isLoadingMaterias.set(false); 
+    },
+      error: (err) => {
+        console.error('Error al cargar materias disponibles:', err);
+        this.materiasDisponibles.set([]);
+      this.isLoadingMaterias.set(false);
+      }
+    });
   }
+
+  toggleMateria(id: number | undefined): void {
+    if (!id) return;
+    this.selectedMateriaIds.update(current =>
+      current.includes(id) ? current.filter(item => item !== id) : [...current, id]
+    );
+  }
+
+  isMateriaSelected(id: number | undefined): boolean {
+    return id ? this.selectedMateriaIds().includes(id) : false;
+  }
+
+  seleccionarTodasMaterias(): void {
+    const todas = this.materiasDisponibles();
+    const idsValidos = todas
+      .map(m => m.id)
+      .filter((id): id is number => id !== undefined);
+
+    if (this.selectedMateriaIds().length === idsValidos.length) {
+      this.selectedMateriaIds.set([]);
+    } else {
+      this.selectedMateriaIds.set(idsValidos);
+    }
+  }
+
+  guardarInscripcion(): void {
+    const estudiante = this.estudianteParaInscribir();
+    const ids = this.selectedMateriaIds();
+
+    if (!estudiante || ids.length === 0) return;
+
+    this.materiaService.inscribirEstudianteEnMaterias(estudiante.id, ids).subscribe({
+      next: (res) => {
+        console.log('Inscripción realizada con éxito:', res);
+        this.cerrarModalInscribir();
+      },
+      error: (err) => {
+        console.error('Error al inscribir al estudiante:', err);
+      }
+    });
+  }
+
+  cerrarModalInscribir(): void {
+    this.isModalInscribirOpen.set(false);
+    this.estudianteParaInscribir.set(null);
+    this.selectedMateriaIds.set([]);
+  }
+
+
    consultar(students: Persona): void {
    
   }

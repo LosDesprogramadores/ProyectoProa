@@ -41,4 +41,15 @@ export class MateriaService {
     return this.http.get<IMateria[]>(`${this.baseUrl}?profesor=${profesorId}`);
   }
 
+cargarMateriasDisponiblesParaEstudiante(estudianteId: number): Observable<IMateria[]> {
+  return this.http.get<IMateria[]>(`${this.baseUrl}?disponibles_estudiante=${estudianteId}`);
+}
+
+inscribirEstudianteEnMaterias(estudianteId: number, materiaIds: number[]): Observable<any> {
+  return this.http.post(`${environment.apiUrl}inscripciones/inscribir/`, {
+    estudiante_id: estudianteId,
+    materia_ids: materiaIds
+  });
+}
+
 }
