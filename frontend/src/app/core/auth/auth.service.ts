@@ -18,6 +18,7 @@ export interface LoginCredentials {
 export class AuthService {
   
   private http = inject(HttpClient);
+  private router = inject(Router);
 
    private readonly loginUrl = `${environment.apiUrl}auth/login/`; 
    private readonly perfilUrl = `${environment.apiUrl}auth/me/`;
@@ -58,5 +59,10 @@ readonly currentPersona = computed<Persona | null>(() => {
   logout(): void {
     this.token.set(null);
     this.currentUser.set(null);
+
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
+    this.router.navigate(['/login']);
   }
 }

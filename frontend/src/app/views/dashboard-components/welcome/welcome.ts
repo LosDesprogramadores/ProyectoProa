@@ -18,7 +18,7 @@ export class Welcome {
  
 userName = computed(() => {
     
-    const persona = this.currentUser()?.persona;;
+    const persona = this.currentUser()?.persona;
     if (!persona) return 'Invitado';
     return `${persona.nombre} `;
   });

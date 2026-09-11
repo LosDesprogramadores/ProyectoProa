@@ -1,7 +1,5 @@
 import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { HealthStatus } from '../../core/models/api-response.interface';
-import { ServiceAuth } from '../../services/service.auth';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
 
@@ -14,10 +12,8 @@ import { UserRole } from '../../core/auth/auth.model';
 })
 export class Navbar implements OnInit {
   
-  private serviceAuth = inject(ServiceAuth);
   private authService = inject(AuthService);
   private currentUser = this.authService.currentUser
-  response = signal<HealthStatus | null>(null);
   loading = signal<boolean>(true);
   isMobileMenuOpen = signal<boolean>(false);
   isProfileMenuOpen = signal<boolean>(false);
@@ -68,7 +64,7 @@ switch (this.currentUser()?.rolId) {
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
     this.isProfileMenuOpen.set(false);
-    this.serviceAuth.logout();
+    this.authService.logout();
   }
 
   @HostListener('document:click', ['$event'])
