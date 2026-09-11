@@ -159,6 +159,7 @@ consultar(profesor: Persona): void {
   }
 
   this.profesorSeleccionado.set(profesor);
+  this.isLoadingConsulta.set(true);
   console.log('3. Señal profesorSeleccionado actualizada a:', this.profesorSeleccionado());
 
   this.materiasProfesorSeleccionado.set([]);
@@ -167,9 +168,11 @@ consultar(profesor: Persona): void {
     next: (materias) => {
       console.log('4. Materias recibidas con éxito:', materias);
       this.materiasProfesorSeleccionado.set(materias);
+      this.isLoadingConsulta.set(false);
     },
     error: (err) => {
       console.error('Error HTTP al consultar materias:', err);
+      this.isLoadingConsulta.set(false);
     }
   });
 }
