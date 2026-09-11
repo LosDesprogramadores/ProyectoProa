@@ -30,6 +30,25 @@ readonly currentPersona = computed<Persona | null>(() => {
     return this.currentUser()?.persona ?? null;
   });
 
+  constructor() {
+    if (this.token()) {
+      this.getUserProfile().subscribe();
+    }
+  }
+
+  getUserProfile(): Observable<User> {
+    return this.http.get<User>(this.perfilUrl).pipe(
+      tap((userData: User) => {
+        this.currentUser.set(userData);
+      }),
+      catchError((err) => {
+        console.error('Error al recuperar sesión activada por F5:', err);
+        this.logout();
+        return throwError(() => err);
+      })
+    );
+  }
+
   login(credentials: LoginCredentials): Observable<User> {
      return this.http.post<AuthResponse>(this.loginUrl, credentials).pipe(
         tap((res: AuthResponse) => {
