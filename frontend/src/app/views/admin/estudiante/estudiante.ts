@@ -6,11 +6,13 @@ import { IPersona, Persona, RolId } from '../../../model/Persona.model';
 import { EstudianteService } from '../../../services/estudiante.service';
 import { IMateria } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
+import { ToastService } from '../../../services/toast.service';
+import { Toast } from '../../../shared/toast/toast';
 
 
 @Component({
   selector: 'app-estudiante',
-  imports: [ReactiveFormsModule,RouterModule, CommonModule],
+  imports: [ReactiveFormsModule,RouterModule, CommonModule,Toast],
   templateUrl: './estudiante.html',
   styleUrl: './estudiante.css',
 })
@@ -18,6 +20,7 @@ export class Estudiante implements OnInit {
 private fb = inject(FormBuilder);
 private estudianteService = inject(EstudianteService)
 private materiaService = inject(MateriaService)
+private toastService = inject(ToastService)
 students = signal<Persona[]>([])
 
   isModalOpen = signal<boolean>(false);
@@ -43,7 +46,7 @@ students = signal<Persona[]>([])
 
  
   ngOnInit(): void {
-     this.cargarEstudiantes()
+   this.cargarEstudiantes()
   }
 
   cargarEstudiantes():void{
@@ -102,11 +105,13 @@ students = signal<Persona[]>([])
     this.estudianteService.crearEstudiates(nuevoEstudiante).subscribe({
       next: (res: Persona) => {
         console.log('Estudiante creado con éxito:', res);
+        this.toastService.success(`Estudiante ${res.nombre} ${res.apellido} se creó con éxito.`);
         this.students.update(lista => [...lista, res]);
         this.closeModal();
       },
       error: (err) => {
         console.error('Error al registrar el estudiante:', err);
+        this.toastService.error('Error al intentar registrar el estudiante.');
       }
     });
   }
@@ -117,11 +122,13 @@ students = signal<Persona[]>([])
    if (confirm('¿Deseas eliminar este estudiante?')) {
       this.estudianteService.eliminarEstudiante(id).subscribe({
         next: () => {
-          console.log('Estudiante eliminado con éxito');
+          console.log('Estudiante eliminado con éxito');  
+          this.toastService.success('Estudiante eliminado con éxito.');
           this.students.update(lista => lista.filter(estudiante => estudiante.id !== id));
         },
         error: (err) => {
           console.error('Error al eliminar el estudiante:', err);
+          this.toastService.error('Error al eliminar el estudiante.');
         }
       });
   }
@@ -142,6 +149,7 @@ students = signal<Persona[]>([])
     },
       error: (err) => {
         console.error('Error al cargar materias disponibles:', err);
+        this.toastService.error('Error al cargar materias disponibles para inscripción.');
         this.materiasDisponibles.set([]);
       this.isLoadingMaterias.set(false);
       }
@@ -181,10 +189,12 @@ students = signal<Persona[]>([])
     this.materiaService.inscribirEstudianteEnMaterias(estudiante.id, ids).subscribe({
       next: (res) => {
         console.log('Inscripción realizada con éxito:', res);
+        this.toastService.success(`Se inscribió a ${estudiante.nombre} en ${ids.length} materias.`);
         this.cerrarModalInscribir();
       },
       error: (err) => {
         console.error('Error al inscribir al estudiante:', err);
+        this.toastService.error('Error al inscribir al estudiante.');
       }
     });
   }
@@ -197,6 +207,7 @@ students = signal<Persona[]>([])
 
 
    consultar(students: Persona): void {
+    this.toastService.info(`Consulta de estudiante: en desarrollo`);
    
   }
 }
