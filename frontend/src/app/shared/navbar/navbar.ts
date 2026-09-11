@@ -13,7 +13,7 @@ import { UserRole } from '../../core/auth/auth.model';
 export class Navbar {
   
   private authService = inject(AuthService);
-  private currentUser = this.authService.currentUser
+  currentUser = this.authService.currentUser
   loading = signal<boolean>(true);
   isMobileMenuOpen = signal<boolean>(false);
   isProfileMenuOpen = signal<boolean>(false);
@@ -70,6 +70,10 @@ export class Navbar {
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
     this.isProfileMenuOpen.set(false);
+  }
+
+  logout(): void {
+    this.closeMenus();
     this.authService.logout();
   }
 
