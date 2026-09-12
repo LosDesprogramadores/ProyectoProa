@@ -26,5 +26,8 @@ eliminarPersona(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}personas/${id}/`);
   }
 
+  actualizarPersona(id: number, personaData: IPersona): Observable<Persona> { 
+    return this.http.put<Persona>(`${this.baseUrl}personas/${id}/`, personaData);
+  }     
 
 }
