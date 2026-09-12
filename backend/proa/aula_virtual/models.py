@@ -3,13 +3,42 @@ from usuario.models import Persona
 from academico.models import Materia
 
 
+class Unidad(models.Model):
+    materia = models.ForeignKey(Materia,on_delete=models.CASCADE,related_name='unidades')
+    numero = models.PositiveIntegerField(help_text="Ej: 1 para Unidad 1")
+    titulo = models.CharField(max_length=150, help_text="Ej: Matemáticas")
+    descripcion = models.TextField(null=True,blank=True)
+    orden = models.PositiveIntegerField(default=1)
+
+    class Meta: 
+        db_table = 'unidad'
+        verbose_name = 'Unidad'
+        verbose_name_plural = 'Unidades'
+        ordering = ['orden', 'numero']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['materia', 'numero'],
+                name='unique_unidad_materia'
+            )
+        ]
+    def __str__(self):
+        return f'Unidad {self.numero}: {self.titulo} ({self.materia.titulo})'
+
+
 class Material(models.Model):
+    class TipoContenido(models.TextChoices):
+        DOCUMENTO = 'DOCUMENTO', 'Documento'
+        VIDEO = 'VIDEO', 'Video'
+        ENLACE = 'ENLACE', 'Enlace externo'
+        
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='materiales')
+    unidad = models.ForeignKey(Unidad,on_delete=models.CASCADE,null=True,blank=True,related_name='materiales',help_text='Si es NULL es un recurso de la clase. Si tiene ID pertenece a una unidad')
+    tipo = models.CharField(max_length=20,choices=TipoContenido.choices, default=TipoContenido.DOCUMENTO)
+
     titulo = models.CharField(max_length=150) 
     descripcion = models.TextField(null=True, blank=True)
     archivo = models.FileField(upload_to='materiales/%Y/%m/', null=True, blank=True)
     enlace = models.URLField(max_length=500, blank=True, null=True)
-    formato = models.CharField(max_length=50, null=True,blank=True, help_text='Ej: PDF, Link o Zip')
     visible = models.BooleanField(default=True)
     fecha_publicacion = models.DateTimeField(auto_now_add=True)
 
@@ -29,8 +58,10 @@ class Actividad(models.Model):
         PUBLICADA = 'PUBLICADA', "Publicada"
 
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='actividades')
+
     titulo = models.CharField(max_length=150)
     descripcion = models.TextField(null=True, blank=True)
+    enlace = models.URLField(max_length=500, null=True, blank=True, help_text="Link a Google Drive o web con consigna/material complementario")
     archivo_adjunto = models.FileField(upload_to='actividades/%Y/%m/', null=True,blank=True)
     fecha_limite = models.DateTimeField()
     permitir_entrega_tardia = models.BooleanField(default=True)
@@ -55,7 +86,7 @@ class Entrega(models.Model):
         REENTREGA = 'REENTREGA', 'Reentrega'
 
     actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, related_name='entregas')
-    estudiante = models.ForeignKey('usuario.Persona', on_delete=models.CASCADE, related_name='entregas')
+    estudiante = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='entregas')
     archivo = models.FileField(upload_to='entregas/%Y/%m/', null=True, blank=True)
     enlace = models.URLField(max_length=500, null=True, blank=True)
     contenido_texto = models.TextField(null=True, blank=True)
