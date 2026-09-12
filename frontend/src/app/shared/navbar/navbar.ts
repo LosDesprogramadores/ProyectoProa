@@ -2,17 +2,20 @@ import { Component, computed, effect, HostListener, inject, OnInit, signal } fro
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
+import { ToastService } from '../../services/toast.service';
+import { Toast } from '../toast/toast';
 
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterModule],
+  imports: [RouterModule,Toast],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
 export class Navbar {
   
   private authService = inject(AuthService);
+  private toastService = inject(ToastService);
   currentUser = this.authService.currentUser
   loading = signal<boolean>(true);
   isMobileMenuOpen = signal<boolean>(false);
@@ -47,12 +50,14 @@ export class Navbar {
           this.navLinksAdmi = [
             { label: 'Profesores', path: 'admin/profesores' },
             { label: 'Estudiantes', path: 'admin/estudiantes' },
-            { label: 'Materias', path: 'admin/materias' }
+            { label: 'Materias', path: 'admin/materias' },
+            { label: 'Notificaciones', path: 'admin/notificaciones' }
           ];
           break;
 
         default:
           console.warn('Rol no reconocido:', user.rolId);
+          this.toastService.warning('Rol no reconocido. Algunas funcionalidades pueden no estar disponibles.', 'Advertencia');
           this.navLinksAdmi = [];
           break;
       }

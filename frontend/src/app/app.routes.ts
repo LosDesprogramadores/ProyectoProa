@@ -21,6 +21,7 @@ import { Calificaciones } from './views/materias-components/calificaciones/calif
 import { Profesor } from './views/admin/profesor/profesor';
 import { Materia } from './views/admin/materia/materia';
 import { TablaGenerica } from './views/admin/tabla-generica/tabla-generica';
+import { Notificacion } from './views/admin/notificacion/notificacion';
 
 
 export const routes: Routes = [
@@ -71,6 +72,8 @@ export const routes: Routes = [
         { path: '', redirectTo: 'admin/profesores', pathMatch: 'full' },
         {path: 'admin/estudiantes', component: Estudiante},
         {path: 'admin/profesores', component: Profesor},
-        {path: 'admin/materias', component: Materia}    ]
+        {path: 'admin/materias', component: Materia} ,
+        {path: 'admin/notificaciones', component: Notificacion}
+         ]
     }
 ];
