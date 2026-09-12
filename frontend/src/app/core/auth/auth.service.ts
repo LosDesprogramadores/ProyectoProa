@@ -75,6 +75,11 @@ readonly currentPersona = computed<Persona | null>(() => {
     getCurrentUser(): Persona| null{
       return this.currentPersona();
   }
+
+  isLoggedIn(): boolean {
+    return this.token() !== null;
+  }
+
   logout(): void {
     this.token.set(null);
     this.currentUser.set(null);
