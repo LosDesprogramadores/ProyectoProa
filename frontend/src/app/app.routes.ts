@@ -50,7 +50,7 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'view-materia',
+    path: 'view-materia/:id',
     component: MateriasLayout,
     //canActivate: [authGuard],
     children: [
