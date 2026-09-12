@@ -99,10 +99,18 @@ columnasMaterias = [
        const formValues = this.form.getRawValue();
    
        if (this.isEditing() && this.selectedId()) {
-        const estudianteActualizado: Persona = {
-         ...formValues,
-         id: this.selectedId()!
-       };
+        this.profesorService.actualizarProfesor(this.selectedId()!, formValues).subscribe({
+          next: (res: Persona) => {
+            console.log('Profesor actualizado con éxito:', res);
+            this.toastService.success('Profesor actualizado con éxito.');
+            this.profesores.update(lista => lista.map(p => p.id === res.id ? res : p));
+            this.closeModal();
+          },
+          error: (err) => {
+            console.error('Error al actualizar el profesor:', err);
+            this.toastService.error('Error al actualizar el profesor. ');
+          }
+        });
       
      } else {
      
