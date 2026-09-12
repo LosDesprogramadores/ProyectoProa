@@ -1,6 +1,7 @@
 from django.db import models
 from usuario.models import Persona
 from academico.models import Materia
+from django.utils import timezone
 
 
 class Unidad(models.Model):
@@ -9,6 +10,7 @@ class Unidad(models.Model):
     titulo = models.CharField(max_length=150, help_text="Ej: Matemáticas")
     descripcion = models.TextField(null=True,blank=True)
     orden = models.PositiveIntegerField(default=1)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
 
     class Meta: 
         db_table = 'unidad'
@@ -18,9 +20,19 @@ class Unidad(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['materia', 'numero'],
-                name='unique_unidad_materia'
+                condition=models.Q(fecha_baja__isnull=True),
+                name='unique_unidad_activa_materia'
             )
         ]
+
+    def soft_delete(self):
+        self.fecha_baja = timezone.now()
+        self.save(update_fields=['fecha_baja'])
+
+    def restore(self):
+        self.fecha_baja = None
+        self.save(update_fields=['fecha_baja'])
+
     def __str__(self):
         return f'Unidad {self.numero}: {self.titulo} ({self.materia.titulo})'
 
@@ -41,12 +53,21 @@ class Material(models.Model):
     enlace = models.URLField(max_length=500, blank=True, null=True)
     visible = models.BooleanField(default=True)
     fecha_publicacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'material'
         verbose_name = 'Material'
         verbose_name_plural = 'Materiales'
         ordering = ['-fecha_publicacion']
+
+    def soft_delete(self):
+        self.fecha_baja = timezone.now()
+        self.save(update_fields=['fecha_baja'])
+
+    def restore(self):
+        self.fecha_baja = None
+        self.save(update_fields=['fecha_baja'])
     
     def __str__(self):
         return f'{self.titulo} - {self.materia.titulo}'
