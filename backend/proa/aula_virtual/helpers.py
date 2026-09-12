@@ -24,7 +24,7 @@ def es_estudiante(user) -> bool:
     return rol == 'estudiante'
 
 
-def verificar_docente_materia(user, materia):
+def verificar_profesor_materia(user, materia):
     if es_admin(user):
         return
     persona, _ = obtener_persona_y_rol(user)

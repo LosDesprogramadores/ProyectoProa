@@ -4,9 +4,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from models import Unidad
-from serializer import UnidadSerializer
-from helpers import (
+from .models import Unidad
+from .serializer import UnidadSerializer
+from .helpers import (
     es_admin,
     es_profesor,
     es_estudiante,
@@ -51,4 +51,16 @@ class UnidadViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         verificar_profesor_materia(self.request.user, instance.materia)
         instance.soft_delete()
-        return super().get_queryset()
+
+    @action(detail=True, methods=['post'], url_path='restaurar')
+    def restaurar(self, request, pk=None):
+        #Para restaurar una unidad dada de baja
+        unidad = Unidad.objects.filter(pk=pk, fecha_baja__isnull=False).select_related('materia').first()
+        if not unidad:
+            return Response({'detail': 'Unidad no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        verificar_profesor_materia(request.user, unidad.materia)
+        unidad.restore()
+        return Response({'mensaje': f'Unidad {unidad.numero} restaurada correctamente.'}, status=status.HTTP_200_OK)
+
+
