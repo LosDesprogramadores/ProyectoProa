@@ -1,68 +1,100 @@
-import { Component, signal, inject, computed, OnInit } from '@angular/core';
-import { Noticia } from '../../../model/noticia.model';
-import { RouterModule } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../core/auth/auth.service';
+import { RouterLink } from '@angular/router';
+import { signal } from '@angular/core';
 import { MateriaService } from '../../../services/materia.service';
 import { IMateria } from '../../../model/materia.model';
 
+interface Noticia {
+  fecha: string;
+  hora: string;
+  titulo: string;
+  autor: string;
+  contenido: string;
+}
+
 @Component({
   selector: 'app-welcome',
-  imports: [RouterModule, CommonModule],
+  standalone: true,
+  imports: [CommonModule, RouterLink],
   templateUrl: './welcome.html',
-  styleUrl: './welcome.css',
+  styleUrls: ['./welcome.css']
 })
 export class Welcome implements OnInit {
-  private authService = inject(AuthService);
-  private materiaService = inject(MateriaService);
-  private currentUser = this.authService.currentUser;
-
-  userName = computed(() => {
-    const persona = this.currentUser()?.persona;
-    if (!persona) return 'Invitado';
-    return `${persona.nombre}`;
-  });
-
-  noticias = signal<Noticia[]>([
-    {
-      titulo: 'Inicio del ciclo lectivo',
-      autor: 'Dirección',
-      fecha: '20/08/2026',
-      hora: '08:00',
-      contenido: 'El ciclo lectivo comienza oficialmente el lunes 24 de agosto.'
-    },
-    {
-      titulo: 'Taller de Robótica',
-      autor: 'Profesor Gómez',
-      fecha: '19/08/2026',
-      hora: '15:30',
-      contenido: 'Se dictará un taller de robótica para alumnos de 5° año en el laboratorio.'
-    }
-  ]);
-
-  // Signals para materias del backend (usar IMateria)
+  // Signals existentes
   materias = signal<IMateria[]>([]);
+  noticias = signal<Noticia[]>([]);
   cargando = signal(false);
   error = signal<string | null>(null);
+  userName = signal('Profesor');
+
+  // NUEVOS: Signals para expand de materias
+  expandedMaterias = signal(false);
+  readonly itemsToShow = 3; // Mostrar 3 materias por defecto
+
+  constructor(private materiaService: MateriaService) {}
 
   ngOnInit(): void {
-    this.cargarMaterias();
+    this.loadMaterias();
+    this.loadNoticias();
   }
 
-  private cargarMaterias(): void {
+  private loadMaterias(): void {
     this.cargando.set(true);
     this.error.set(null);
-
+    // CORREGIDO: cambié getMaterias() a obtenerMaterias()
     this.materiaService.obtenerMaterias().subscribe({
-      next: (data) => {
+      next: (data: IMateria[]) => {
         this.materias.set(data);
         this.cargando.set(false);
       },
-      error: (err) => {
-        console.error('Error al obtener materias:', err);
+      error: (err: any) => {
+        console.error('Error cargando materias:', err);
         this.error.set('No se pudieron cargar las materias');
         this.cargando.set(false);
       }
     });
+  }
+
+  private loadNoticias(): void {
+    // Simular carga de noticias o conectar a servicio real
+    // Por ahora dejamos el array vacío
+    this.noticias.set([
+      {
+        fecha: '20/08/2026',
+        hora: '08:00',
+        titulo: 'Inicio del ciclo lectivo',
+        autor: 'Dirección',
+        contenido: 'El ciclo lectivo comienza oficialmente el lunes 24 de agosto.'
+      }
+    ]);
+  }
+
+  // ============================================
+  // NUEVOS GETTERS Y MÉTODOS PARA EXPAND
+  // ============================================
+
+  /**
+   * Devuelve solo las materias visibles (3 por defecto, todas si está expandido)
+   */
+  get materiasVisibles(): IMateria[] {
+    if (this.expandedMaterias()) {
+      return this.materias();
+    }
+    return this.materias().slice(0, this.itemsToShow);
+  }
+
+  /**
+   * Verifica si hay más materias que las que se muestran por defecto
+   */
+  get tieneMasMaterias(): boolean {
+    return this.materias().length > this.itemsToShow;
+  }
+
+  /**
+   * Toggle para expandir/contraer la lista de materias
+   */
+  toggleExpandMaterias(): void {
+    this.expandedMaterias.update(value => !value);
   }
 }
