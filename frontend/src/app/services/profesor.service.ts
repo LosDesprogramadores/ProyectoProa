@@ -29,5 +29,9 @@ crearProfesores(nuevoProfesor:IPersona):Observable<Persona>{
 asignarMateriasAProfesor(profesorId: number, materiaIds: number[]): Observable<any> {
     return this.materiaService.asignarProfesorAMaterias(profesorId, materiaIds);
   }
+ actualizarProfesor(profesorId: number, profesorData: IPersona): Observable<Persona> {
+    return this.personaService.actualizarPersona(profesorId, profesorData);
+  } 
+
 
 }

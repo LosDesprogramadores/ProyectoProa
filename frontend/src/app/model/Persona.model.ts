@@ -16,7 +16,7 @@ export interface IPersona {
   email: string;
   fecha_nacimiento: string;
   tel_contacto: string;
-  rol: number;
+  rol?: number;
 }
 
 export enum RolId {

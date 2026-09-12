@@ -7,6 +7,7 @@ import { ProfesorService } from '../../../services/profesor.service';
 import { IMateria, IMateriaAsignacion } from '../../../model/materia.model';
 import { MateriaService } from '../../../services/materia.service';
 import { TablaGenerica } from '../tabla-generica/tabla-generica';
+import { ToastService } from '../../../services/toast.service';
 
 
 @Component({
@@ -19,6 +20,7 @@ export class Profesor implements OnInit {
 private fb = inject(FormBuilder);
 private materiaService = inject(MateriaService);
 private profesorService = inject(ProfesorService)
+private toastService = inject(ToastService)
 
 profesores = signal<Persona[]>([])
 isModalOpen = signal<boolean>(false);
@@ -65,6 +67,7 @@ columnasMaterias = [
           this.isLoading.set(false);
             console.log(data)},
       error: (err) => {console.error('Error al cargar profesores:', err )
+        this.toastService.error('Error al cargar profesores.');
         this.isLoading.set(false);
       }
       })
@@ -96,10 +99,18 @@ columnasMaterias = [
        const formValues = this.form.getRawValue();
    
        if (this.isEditing() && this.selectedId()) {
-        const estudianteActualizado: Persona = {
-         ...formValues,
-         id: this.selectedId()!
-       };
+        this.profesorService.actualizarProfesor(this.selectedId()!, formValues).subscribe({
+          next: (res: Persona) => {
+            console.log('Profesor actualizado con éxito:', res);
+            this.toastService.success('Profesor actualizado con éxito.');
+            this.profesores.update(lista => lista.map(p => p.id === res.id ? res : p));
+            this.closeModal();
+          },
+          error: (err) => {
+            console.error('Error al actualizar el profesor:', err);
+            this.toastService.error('Error al actualizar el profesor. ');
+          }
+        });
       
      } else {
      
