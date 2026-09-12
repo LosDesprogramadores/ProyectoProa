@@ -3,7 +3,8 @@ import { Component, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 import { IMateria } from '../../../model/materia.model';
-import { MateriaService } from '../../../services/materia.service';
+import { AuthService } from '../../../core/auth/auth.service';
+import { InscripcionesService } from '../../../services/inscripciones.service';
 
 @Component({
   selector: 'app-materias',
@@ -13,11 +14,8 @@ import { MateriaService } from '../../../services/materia.service';
   styleUrl: './materias.css',
 })
 export class Materias implements OnInit {
-
   materias = signal<IMateria[]>([]);
-
   cargando = signal(false);
-
   error = signal<string | null>(null);
 
   private readonly colores = [
@@ -27,11 +25,12 @@ export class Materias implements OnInit {
     'bg-yellow-300',
     'bg-purple-300',
     'bg-pink-300',
-    'bg-teal-300'
+    'bg-teal-300',
   ];
 
   constructor(
-    private readonly materiaService: MateriaService
+    private readonly inscripcionesService: InscripcionesService,
+    private readonly authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -42,67 +41,46 @@ export class Materias implements OnInit {
     this.cargando.set(true);
     this.error.set(null);
 
-    const estudianteId = this.obtenerEstudianteId();
+    const usuario = this.authService.currentUser();
+    const estudianteId = usuario?.persona?.id;
 
-    /*
-     * Si existe el ID del estudiante utilizamos el endpoint
-     * específico que ya tenemos disponible.
-     *
-     * Si todavía no está disponible desde el login, usamos
-     * obtenerMaterias() como fallback para no romper la vista
-     * mientras termina la integración de autenticación.
-     */
-    if (estudianteId !== null) {
+    console.log('Usuario autenticado:', usuario);
+    console.log('ID del estudiante:', estudianteId);
 
-      this.materiaService
-        .cargarMateriasDisponiblesParaEstudiante(estudianteId)
-        .subscribe({
-          next: (data: IMateria[]) => {
-            this.materias.set(data);
-            this.cargando.set(false);
-          },
-
-          error: (err) => {
-            console.error(
-              'Error cargando materias del estudiante:',
-              err
-            );
-
-            this.error.set(
-              'No se pudieron cargar tus materias.'
-            );
-
-            this.cargando.set(false);
-          }
-        });
-
+    if (estudianteId === undefined || estudianteId === null) {
+      this.error.set('No se pudo identificar al estudiante.');
+      this.cargando.set(false);
       return;
     }
 
-    /*
-     * Fallback temporal:
-     * si todavía no tenemos disponible el ID del estudiante
-     * desde el sistema de autenticación, usamos el endpoint
-     * general de materias.
-     */
-    this.materiaService.obtenerMaterias().subscribe({
-      next: (data: IMateria[]) => {
-        this.materias.set(data);
+    this.inscripcionesService.obtenerInscripcionesPorEstudiante(estudianteId).subscribe({
+      next: (inscripciones) => {
+        const materias: IMateria[] = inscripciones.map((inscripcion) => ({
+          id: inscripcion.materia,
+          titulo: inscripcion.materia_titulo,
+          curso: inscripcion.materia_curso,
+          anio: inscripcion.materia_anio,
+          descripcion: null,
+          criterios_evaluacion: null,
+          activo: true,
+          profesor: null,
+          profesor_detalle: null,
+          total_estudiantes: undefined,
+        }));
+
+        this.materias.set(materias);
         this.cargando.set(false);
+
+        console.log('Materias inscriptas del estudiante:', materias);
       },
 
       error: (err) => {
-        console.error(
-          'Error cargando materias:',
-          err
-        );
+        console.error('Error cargando materias del estudiante:', err);
 
-        this.error.set(
-          'No se pudieron cargar las materias.'
-        );
+        this.error.set('No se pudieron cargar tus materias.');
 
         this.cargando.set(false);
-      }
+      },
     });
   }
 
@@ -115,60 +93,6 @@ export class Materias implements OnInit {
       return ['/dashboard/materias'];
     }
 
-    return [
-      '/view-materia',
-      materia.id.toString(),
-      'portada'
-    ];
-  }
-
-  private obtenerEstudianteId(): number | null {
-
-    const claves = [
-      'usuario',
-      'user',
-      'usuarioLogueado',
-      'userData',
-      'currentUser'
-    ];
-
-    for (const clave of claves) {
-
-      const valor = localStorage.getItem(clave);
-
-      if (!valor) {
-        continue;
-      }
-
-      try {
-
-        const usuario = JSON.parse(valor);
-
-        const id =
-          usuario?.id ??
-          usuario?.usuario?.id ??
-          usuario?.user?.id ??
-          usuario?.estudiante?.id ??
-          usuario?.estudiante_id;
-
-        if (id !== undefined && id !== null) {
-          const numeroId = Number(id);
-
-          if (!Number.isNaN(numeroId)) {
-            return numeroId;
-          }
-        }
-
-      } catch {
-
-        const numeroId = Number(valor);
-
-        if (!Number.isNaN(numeroId)) {
-          return numeroId;
-        }
-      }
-    }
-
-    return null;
+    return ['/view-materia', materia.id.toString(), 'portada'];
   }
 }
