@@ -1,23 +1,22 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { HealthStatus } from '../../core/models/api-response.interface';
-import { ServiceAuth } from '../../services/service.auth';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserRole } from '../../core/auth/auth.model';
+import { ToastService } from '../../services/toast.service';
+import { Toast } from '../toast/toast';
 
 
 @Component({
   selector: 'app-navbar',
-  imports: [RouterModule],
+  imports: [RouterModule,Toast],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
-export class Navbar implements OnInit {
+export class Navbar {
   
-  private serviceAuth = inject(ServiceAuth);
   private authService = inject(AuthService);
-  private currentUser = this.authService.currentUser
-  response = signal<HealthStatus | null>(null);
+  private toastService = inject(ToastService);
+  currentUser = this.authService.currentUser
   loading = signal<boolean>(true);
   isMobileMenuOpen = signal<boolean>(false);
   isProfileMenuOpen = signal<boolean>(false);
@@ -38,23 +37,31 @@ export class Navbar implements OnInit {
   });
    
 
-  ngOnInit(): void {
-switch (this.currentUser()?.rolId) {
-      case UserRole.ADMIN: 
-      this.navLinksAdmi = [
-          { label: 'Profesores', path: 'admin/profesores' },
-          { label: 'Estudiantes', path: 'admin/estudiantes' },
-          { label: 'Materias', path: 'admin/materias' }
-        ];
-        break;
+ constructor() {
+    effect(() => {
+      const user = this.currentUser();
+      if (!user) {
+        this.navLinksAdmi = [];
+        return;
+      }
 
-     default:
-        console.warn('Rol no reconocido:', this.currentUser()?.rolId);
-       this.navLinksAdmi = [];
-        break;
-    }
+      switch (user.rolId) {
+        case UserRole.ADMIN:
+          this.navLinksAdmi = [
+            { label: 'Profesores', path: 'admin/profesores' },
+            { label: 'Estudiantes', path: 'admin/estudiantes' },
+            { label: 'Materias', path: 'admin/materias' },
+            { label: 'Notificaciones', path: 'admin/notificaciones' }
+          ];
+          break;
 
-
+        default:
+          console.warn('Rol no reconocido:', user.rolId);
+          this.toastService.warning('Rol no reconocido. Algunas funcionalidades pueden no estar disponibles.', 'Advertencia');
+          this.navLinksAdmi = [];
+          break;
+      }
+    });
   }
 
   toggleMobileMenu(): void {
@@ -68,7 +75,11 @@ switch (this.currentUser()?.rolId) {
   closeMenus(): void {
     this.isMobileMenuOpen.set(false);
     this.isProfileMenuOpen.set(false);
-    this.serviceAuth.logout();
+  }
+
+  logout(): void {
+    this.closeMenus();
+    this.authService.logout();
   }
 
   @HostListener('document:click', ['$event'])

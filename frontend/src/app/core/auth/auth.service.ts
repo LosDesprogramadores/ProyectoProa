@@ -18,6 +18,7 @@ export interface LoginCredentials {
 export class AuthService {
   
   private http = inject(HttpClient);
+  private router = inject(Router);
 
    private readonly loginUrl = `${environment.apiUrl}auth/login/`; 
    private readonly perfilUrl = `${environment.apiUrl}auth/me/`;
@@ -28,6 +29,25 @@ export class AuthService {
 readonly currentPersona = computed<Persona | null>(() => {
     return this.currentUser()?.persona ?? null;
   });
+
+  constructor() {
+    if (this.token()) {
+      this.getUserProfile().subscribe();
+    }
+  }
+
+  getUserProfile(): Observable<User> {
+    return this.http.get<User>(this.perfilUrl).pipe(
+      tap((userData: User) => {
+        this.currentUser.set(userData);
+      }),
+      catchError((err) => {
+        console.error('Error al recuperar sesión activada por F5:', err);
+        this.logout();
+        return throwError(() => err);
+      })
+    );
+  }
 
   login(credentials: LoginCredentials): Observable<User> {
      return this.http.post<AuthResponse>(this.loginUrl, credentials).pipe(
@@ -55,8 +75,18 @@ readonly currentPersona = computed<Persona | null>(() => {
     getCurrentUser(): Persona| null{
       return this.currentPersona();
   }
+
+  isLoggedIn(): boolean {
+    return this.token() !== null;
+  }
+
   logout(): void {
     this.token.set(null);
     this.currentUser.set(null);
+
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
+    this.router.navigate(['/login']);
   }
 }
