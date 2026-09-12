@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { IMateria, Materia } from '../model/materia.model';
+import { IMateria } from '../model/materia.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -10,15 +10,10 @@ import { environment } from '../../environments/environment';
 export class MateriaService {
 
   private readonly http = inject(HttpClient);
-
   private readonly baseUrl = `${environment.apiUrl}materias/`;
 
   obtenerMaterias(): Observable<IMateria[]> {
     return this.http.get<IMateria[]>(this.baseUrl);
-  }
-
-  obtenerMateriaPorId(id: number): Observable<IMateria> {
-    return this.http.get<IMateria>(`${this.baseUrl}${id}/`);
   }
 
   crearMateria(materia: IMateria): Observable<IMateria> {
@@ -78,6 +73,13 @@ export class MateriaService {
     );
   }
 
+  /**
+   * Se mantiene temporalmente por compatibilidad
+   * con componentes que puedan estar usando este método.
+   *
+   * La nueva lógica de inscripciones se encuentra en
+   * InscripcionesService.
+   */
   inscribirEstudianteEnMaterias(
     estudianteId: number,
     materiaIds: number[]
