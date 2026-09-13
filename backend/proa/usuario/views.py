@@ -84,7 +84,8 @@ class PerfilUsuarioView(APIView):
                 "nombre": persona.nombre if persona else "",
                 "apellido": persona.apellido if persona else "",
                 "dni": persona.dni if persona else "",
-                "email": persona.email if persona else ""
+                "email": persona.email if persona else "",
+                "tel_contacto": persona.tel_contacto if persona else ""
             } if persona else None
         }
         return Response(data, status=status.HTTP_200_OK)
