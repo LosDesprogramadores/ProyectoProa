@@ -61,26 +61,6 @@ export class Navbar {
     return `${persona.nombre} ${persona.apellido}`;
   });
 
-  roleName = computed(() => {
-    const user = this.currentUser();
-
-    const rolId = user?.rolId;
-
-    switch (rolId) {
-      case UserRole.ADMIN:
-        return 'Administrador';
-
-      case UserRole.DOCENTE:
-        return 'Profesor';
-
-      case UserRole.ESTUDIANTE:
-        return 'Estudiante';
-
-      default:
-        return 'Usuario';
-    }
-  });
-
   constructor() {
     effect(() => {
       const user = this.currentUser();

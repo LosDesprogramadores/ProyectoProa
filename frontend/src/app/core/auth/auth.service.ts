@@ -27,36 +27,15 @@ export class AuthService {
 
   token = signal<string | null>(localStorage.getItem('access_token'));
 
-  currentUser = signal<User | null>(null);
+  currentUser = signal<User | null>(this.getUserFromStorage());
 
   readonly currentPersona = computed<Persona | null>(() => {
     return this.currentUser()?.persona ?? null;
   });
 
-  constructor() {
-    if (this.token()) {
-      this.getUserProfile().subscribe();
-    }
-  }
-
-  getUserProfile(): Observable<User> {
-    return this.http.get<User>(this.perfilUrl).pipe(
-      tap((userData: User) => {
-        this.currentUser.set(userData);
-
-        console.log('Usuario recuperado:', userData);
-
-        console.log('Rol del usuario:', userData.rolId);
-      }),
-
-      catchError((err) => {
-        console.error('Error al recuperar sesión activada por F5:', err);
-
-        this.logout();
-
-        return throwError(() => err);
-      }),
-    );
+  private getUserFromStorage(): User | null {
+    const userJson = localStorage.getItem('current_user');
+    return userJson ? (JSON.parse(userJson) as User) : null;
   }
 
   login(credentials: LoginCredentials): Observable<User> {
@@ -78,6 +57,8 @@ export class AuthService {
       }),
 
       tap((userData: User) => {
+
+        localStorage.setItem('current_user', JSON.stringify(userData));
         this.currentUser.set(userData);
 
         console.log('Datos de la persona asociada:', userData);
@@ -105,6 +86,7 @@ export class AuthService {
 
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('current_user');
 
     this.router.navigate(['/login']);
   }
